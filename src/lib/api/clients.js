@@ -13,7 +13,7 @@ export const clientsService = {
       toolName: "search_clients",
       args: {
         agent_id: getCurrentAgentId(), // Get from auth context
-        query: "",
+        query: "%", // Use wildcard to get all clients
         limit: params.limit || 50,
       },
     });
