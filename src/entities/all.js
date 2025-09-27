@@ -45,12 +45,21 @@ export const Client = {
   async getAll(params = {}) {
     try {
       const response = await api.clients.getAll(params);
-      // MCP tool execution returns { result: [...] } format
-      if (response && response.result) {
-        return response.result;
+      
+      // MCP tool execution returns { result: [{ type: "text", text: "..." }] } format
+      if (response && response.result && Array.isArray(response.result)) {
+        // Parse the JSON from the text field
+        const textResult = response.result.find(r => r.type === "text");
+        if (textResult && textResult.text) {
+          const parsedResult = JSON.parse(textResult.text);
+          if (parsedResult.status === "success" && parsedResult.clients) {
+            return parsedResult.clients;
+          }
+        }
       }
+      
       // Fallback for other response formats
-      return response.clients || response || []; // Handle different response formats
+      return response.clients || response || [];
     } catch (error) {
       console.warn(
         "Failed to fetch clients from API, using mock data:",
@@ -93,10 +102,18 @@ export const Client = {
   async getById(clientId) {
     try {
       const response = await api.clients.getById(clientId);
-      // MCP tool execution returns { result: {...} } format
-      if (response && response.result) {
-        return response.result;
+      
+      // MCP tool execution returns { result: [{ type: "text", text: "..." }] } format
+      if (response && response.result && Array.isArray(response.result)) {
+        const textResult = response.result.find(r => r.type === "text");
+        if (textResult && textResult.text) {
+          const parsedResult = JSON.parse(textResult.text);
+          if (parsedResult.status === "success" && parsedResult.client) {
+            return parsedResult.client;
+          }
+        }
       }
+      
       return response;
     } catch (error) {
       console.warn("Failed to fetch client from API:", error.message);
@@ -108,10 +125,18 @@ export const Client = {
   async create(clientData) {
     try {
       const response = await api.clients.create(clientData);
-      // MCP tool execution returns { result: {...} } format
-      if (response && response.result) {
-        return response.result;
+      
+      // MCP tool execution returns { result: [{ type: "text", text: "..." }] } format
+      if (response && response.result && Array.isArray(response.result)) {
+        const textResult = response.result.find(r => r.type === "text");
+        if (textResult && textResult.text) {
+          const parsedResult = JSON.parse(textResult.text);
+          if (parsedResult.status === "success") {
+            return parsedResult;
+          }
+        }
       }
+      
       return response;
     } catch (error) {
       console.error("Failed to create client:", error);
@@ -122,10 +147,18 @@ export const Client = {
   async update(clientId, clientData) {
     try {
       const response = await api.clients.update(clientId, clientData);
-      // MCP tool execution returns { result: {...} } format
-      if (response && response.result) {
-        return response.result;
+      
+      // MCP tool execution returns { result: [{ type: "text", text: "..." }] } format
+      if (response && response.result && Array.isArray(response.result)) {
+        const textResult = response.result.find(r => r.type === "text");
+        if (textResult && textResult.text) {
+          const parsedResult = JSON.parse(textResult.text);
+          if (parsedResult.status === "success") {
+            return parsedResult;
+          }
+        }
       }
+      
       return response;
     } catch (error) {
       console.error("Failed to update client:", error);
@@ -136,10 +169,18 @@ export const Client = {
   async search(query, filters = {}) {
     try {
       const response = await api.clients.search(query, filters);
-      // MCP tool execution returns { result: [...] } format
-      if (response && response.result) {
-        return response.result;
+      
+      // MCP tool execution returns { result: [{ type: "text", text: "..." }] } format
+      if (response && response.result && Array.isArray(response.result)) {
+        const textResult = response.result.find(r => r.type === "text");
+        if (textResult && textResult.text) {
+          const parsedResult = JSON.parse(textResult.text);
+          if (parsedResult.status === "success" && parsedResult.clients) {
+            return parsedResult.clients;
+          }
+        }
       }
+      
       return response;
     } catch (error) {
       console.warn("Client search failed, using local filter:", error.message);
