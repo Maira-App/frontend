@@ -1,0 +1,78 @@
+{
+  "name": "Client",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Client's full name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "lead",
+        "closed",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "property_type": {
+      "type": "string",
+      "enum": [
+        "residential_buy",
+        "residential_sell",
+        "commercial",
+        "rental"
+      ],
+      "description": "Type of property transaction"
+    },
+    "budget_min": {
+      "type": "number"
+    },
+    "budget_max": {
+      "type": "number"
+    },
+    "preferred_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_interaction": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_followup": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "urgency_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "maira_summary": {
+      "type": "string",
+      "description": "AI-generated summary of client interactions"
+    }
+  },
+  "required": [
+    "full_name",
+    "phone"
+  ]
+}

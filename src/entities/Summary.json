@@ -1,0 +1,78 @@
+{
+    "name": "Summary",
+    "type": "object",
+    "properties": {
+      "summary_type": {
+        "type": "string",
+        "enum": [
+          "daily",
+          "weekly",
+          "client_specific"
+        ],
+        "default": "daily"
+      },
+      "date": {
+        "type": "string",
+        "format": "date"
+      },
+      "completed_items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "upcoming_items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "maira_suggestions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "suggestion": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            },
+            "category": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "metrics": {
+        "type": "object",
+        "properties": {
+          "calls_made": {
+            "type": "number"
+          },
+          "tasks_completed": {
+            "type": "number"
+          },
+          "meetings_scheduled": {
+            "type": "number"
+          },
+          "follow_ups_sent": {
+            "type": "number"
+          }
+        }
+      },
+      "client_id": {
+        "type": "string",
+        "description": "For client-specific summaries"
+      }
+    },
+    "required": [
+      "summary_type",
+      "date"
+    ]
+  }

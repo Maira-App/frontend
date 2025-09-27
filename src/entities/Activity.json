@@ -1,0 +1,63 @@
+{
+    "name": "Activity",
+    "type": "object",
+    "properties": {
+      "action_type": {
+        "type": "string",
+        "enum": [
+          "call_made",
+          "follow_up_scheduled",
+          "calendar_updated",
+          "property_shared",
+          "email_sent",
+          "task_completed",
+          "meeting_scheduled",
+          "reminder_set"
+        ],
+        "description": "Type of action MAIRA performed"
+      },
+      "client_id": {
+        "type": "string",
+        "description": "Reference to client if activity is client-specific"
+      },
+      "title": {
+        "type": "string",
+        "description": "Brief title of the activity"
+      },
+      "description": {
+        "type": "string",
+        "description": "Detailed description of what was done"
+      },
+      "completion_status": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "pending",
+          "failed"
+        ],
+        "default": "completed"
+      },
+      "scheduled_for": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When this activity is scheduled (for future activities)"
+      },
+      "call_duration": {
+        "type": "number",
+        "description": "Duration in minutes for call activities"
+      },
+      "priority": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "default": "medium"
+      }
+    },
+    "required": [
+      "action_type",
+      "title"
+    ]
+  }
