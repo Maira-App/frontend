@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Client } from "@/entities/all";
-import { Search, Filter, Users, Plus, RefreshCw, X } from "lucide-react";
+import { Search, Filter, Users, Plus, RefreshCw, X, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -19,10 +19,65 @@ export default function Clients() {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(true);
+
+  // Auto-refresh configuration
+  const REFRESH_INTERVAL_MS = 30000; // 30 seconds
+  const refreshIntervalRef = useRef(null);
 
   useEffect(() => {
     loadClients();
   }, []);
+
+  // Auto-refresh effect
+  useEffect(() => {
+    if (!isAutoRefreshEnabled) return;
+
+    // Set up interval for auto-refresh
+    refreshIntervalRef.current = setInterval(() => {
+      loadClients(false); // Don't show loading spinner for auto-refresh
+    }, REFRESH_INTERVAL_MS);
+
+    // Cleanup interval on unmount or when disabled
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+    };
+  }, [isAutoRefreshEnabled]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Pause auto-refresh when tab is not visible (performance optimization)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Tab is hidden, pause auto-refresh
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+          refreshIntervalRef.current = null;
+        }
+      } else if (isAutoRefreshEnabled) {
+        // Tab is visible again, resume auto-refresh
+        refreshIntervalRef.current = setInterval(() => {
+          loadClients(false);
+        }, REFRESH_INTERVAL_MS);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [isAutoRefreshEnabled]);
 
   useEffect(() => {
     if (clients) {
@@ -31,21 +86,39 @@ export default function Clients() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clients, searchQuery, statusFilter, urgencyFilter, propertyTypeFilter]);
 
-  const loadClients = async () => {
-    setIsLoading(true);
+  const loadClients = async (showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     setError(null);
+
     try {
-      // Fetch clients associated with the current logged-in agent
+      // Fetch clients associated with the current logged-in agent using MCP
       const data = await Client.list("-updated_date");
-      // Loaded clients for current agent
+
+      // Update clients and timestamp
       setClients(data);
+      setLastFetchTime(new Date());
+
+      console.log(
+        `✅ Loaded ${
+          data.length
+        } clients for agent at ${new Date().toLocaleTimeString()}`
+      );
     } catch (error) {
       console.error("Error loading clients:", error);
-      setError("Failed to load clients. Please try again.");
-      // Set empty array on error to prevent crashes
-      setClients([]);
+      setError(
+        `Failed to load clients: ${error.message || "Please try again."}`
+      );
+      // Keep existing clients on error to avoid clearing the UI
+      if (clients.length === 0) {
+        setClients([]);
+      }
     }
-    setIsLoading(false);
+
+    if (showLoading) {
+      setIsLoading(false);
+    }
   };
 
   const filterClients = () => {
@@ -165,11 +238,31 @@ export default function Clients() {
               Clients
             </h1>
             <p className="text-gray-400 mt-2">
-              {(clients || []).length} total clients • {urgentCount} need
-              attention
+              {(clients || []).length} total • {statusCounts.active} active
+              clients
+              {lastFetchTime && (
+                <span className="text-xs text-gray-500 ml-2">
+                  • Last updated: {lastFetchTime.toLocaleTimeString()}
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAutoRefreshEnabled(!isAutoRefreshEnabled)}
+              className={`border-gray-700 text-gray-300 hover:bg-gray-800 ${
+                isAutoRefreshEnabled ? "bg-green-600/20 border-green-600" : ""
+              }`}
+              title={
+                isAutoRefreshEnabled
+                  ? "Auto-refresh enabled (30s)"
+                  : "Auto-refresh disabled"
+              }
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Auto: {isAutoRefreshEnabled ? "ON" : "OFF"}
+            </Button>
             <Button
               variant="outline"
               onClick={loadClients}
@@ -213,55 +306,103 @@ export default function Clients() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
-              placeholder="Search clients by name, phone, email, property type, areas, notes..."
+              placeholder="Search clients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-gray-900 border-gray-700 text-white placeholder-gray-400 focus:border-cyan-500"
+              className="pl-10 bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:border-cyan-500"
             />
           </div>
 
-          <div className="flex gap-2">
-            {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-400" />
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
+              className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
             >
-              <option value="all">All Status ({statusCounts.all})</option>
-              <option value="active">Active ({statusCounts.active})</option>
-              <option value="lead">Leads ({statusCounts.lead})</option>
-              <option value="closed">Closed ({statusCounts.closed})</option>
-              <option value="inactive">
-                Inactive ({statusCounts.inactive})
-              </option>
+              <option value="all">Status: All Status</option>
+              <option value="active">Status: Active</option>
+              <option value="lead">Status: Lead</option>
+              <option value="closed">Status: Closed</option>
+              <option value="inactive">Status: Inactive</option>
             </select>
 
-            {/* Urgency Filter */}
-            <select
-              value={urgencyFilter}
-              onChange={(e) => setUrgencyFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
-            >
-              <option value="all">All Priority</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            {/* Property Type Filter */}
             <select
               value={propertyTypeFilter}
               onChange={(e) => setPropertyTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
+              className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:border-cyan-500 focus:outline-none"
             >
-              <option value="all">All Property Types</option>
-              <option value="residential_buy">Residential Buy</option>
-              <option value="residential_sell">Residential Sell</option>
-              <option value="commercial_buy">Commercial Buy</option>
-              <option value="commercial_sell">Commercial Sell</option>
-              <option value="rental">Rental</option>
+              <option value="all">Type: All Types</option>
+              <option value="residential_buy">Type: Residential Buy</option>
+              <option value="residential_sell">Type: Residential Sell</option>
+              <option value="commercial_buy">Type: Commercial Buy</option>
+              <option value="commercial_sell">Type: Commercial Sell</option>
+              <option value="rental">Type: Rental</option>
             </select>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Total Clients */}
+          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">
+                  Total Clients
+                </p>
+                <p className="text-2xl font-bold text-white mt-1">
+                  {statusCounts.all}
+                </p>
+              </div>
+              <Users className="w-6 h-6 text-gray-400" />
+            </div>
+          </div>
+
+          {/* Active */}
+          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">
+                  Active
+                </p>
+                <p className="text-2xl font-bold text-white mt-1">
+                  {statusCounts.active}
+                </p>
+              </div>
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Inactive */}
+          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">
+                  Inactive
+                </p>
+                <p className="text-2xl font-bold text-white mt-1">
+                  {statusCounts.inactive}
+                </p>
+              </div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+            </div>
+          </div>
+
+          {/* Closed */}
+          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide">
+                  Closed
+                </p>
+                <p className="text-2xl font-bold text-white mt-1">
+                  {statusCounts.closed}
+                </p>
+              </div>
+              <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+            </div>
           </div>
         </div>
 
