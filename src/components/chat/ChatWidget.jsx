@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Mic, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { InvokeLLM } from '@/integrations/Core';
-import { Client, Activity } from '@/entities/all';
-import { format } from 'date-fns';
+import React, { useState, useRef, useEffect } from "react";
+import { MessageCircle, X, Send, Mic, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { InvokeLLM } from "@/integrations/Core";
+import { Client, Activity } from "@/entities/all";
+import { format } from "date-fns";
 
 export default function ChatWidget({ isOpen, onClose }) {
   const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -20,8 +20,8 @@ export default function ChatWidget({ isOpen, onClose }) {
           id: 1,
           text: "Hi! I'm MAIRA, your real estate assistant. I can help you with client information, property insights, schedule management, and answer any questions about your business. How can I assist you today?",
           isBot: true,
-          timestamp: new Date()
-        }
+          timestamp: new Date(),
+        },
       ]);
     }
   }, [isOpen, messages.length]);
@@ -31,7 +31,7 @@ export default function ChatWidget({ isOpen, onClose }) {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleSend = async () => {
@@ -41,36 +41,36 @@ export default function ChatWidget({ isOpen, onClose }) {
       id: messages.length + 1,
       text: inputValue,
       isBot: false,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue("");
     setIsLoading(true);
 
     try {
       // Get context data for MAIRA
       const [clientsData, activitiesData] = await Promise.all([
-        Client.list('-updated_date', 10),
-        Activity.list('-created_date', 20)
+        Client.list("-updated_date", 10),
+        Activity.list("-created_date", 20),
       ]);
 
       // Prepare context for the AI
       const context = {
-        recent_clients: clientsData.slice(0, 5).map(c => ({
+        recent_clients: clientsData.slice(0, 5).map((c) => ({
           name: c.full_name,
           status: c.status,
           urgency: c.urgency_level,
           property_type: c.property_type,
-          last_interaction: c.last_interaction
+          last_interaction: c.last_interaction,
         })),
-        recent_activities: activitiesData.slice(0, 10).map(a => ({
+        recent_activities: activitiesData.slice(0, 10).map((a) => ({
           type: a.action_type,
           title: a.title,
           status: a.completion_status,
-          date: a.created_date
+          date: a.created_date,
         })),
-        current_date: new Date().toISOString()
+        current_date: new Date().toISOString(),
       };
 
       const response = await InvokeLLM({
@@ -84,34 +84,34 @@ Current context:
 User question: "${inputValue}"
 
 Please provide a helpful, concise response as MAIRA. Be professional but friendly. If the question is about specific clients or activities, reference the context data. If you need more information, ask clarifying questions. Keep responses under 200 words.`,
-        add_context_from_internet: false
+        add_context_from_internet: false,
       });
 
       const botMessage = {
         id: messages.length + 2,
         text: response,
         isBot: true,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error('Error getting MAIRA response:', error);
+      console.error("Error getting MAIRA response:", error);
       const errorMessage = {
         id: messages.length + 2,
         text: "I'm sorry, I'm having trouble connecting right now. Please try again in a moment.",
         isBot: true,
         timestamp: new Date(),
-        isError: true
+        isError: true,
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     }
 
     setIsLoading(false);
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -121,7 +121,7 @@ Please provide a helpful, concise response as MAIRA. Be professional but friendl
     "Show me my urgent clients",
     "What's on my schedule today?",
     "Recent activity summary",
-    "Market insights"
+    "Market insights",
   ];
 
   const handleQuickAction = (action) => {
@@ -163,38 +163,46 @@ Please provide a helpful, concise response as MAIRA. Be professional but friendl
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
+                className={`flex ${
+                  message.isBot ? "justify-start" : "justify-end"
+                }`}
               >
                 <div
                   className={`max-w-[280px] p-3 rounded-2xl ${
                     message.isBot
                       ? message.isError
-                        ? 'bg-red-500/20 text-red-200 border border-red-500/30'
-                        : 'bg-gray-800 text-gray-100 border border-gray-700'
-                      : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white'
+                        ? "bg-red-500/20 text-red-200 border border-red-500/30"
+                        : "bg-gray-800 text-gray-100 border border-gray-700"
+                      : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                  <p className={`text-xs mt-2 ${
-                    message.isBot ? 'text-gray-400' : 'text-white/70'
-                  }`}>
-                    {format(message.timestamp, 'h:mm a')}
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {message.text}
+                  </p>
+                  <p
+                    className={`text-xs mt-2 ${
+                      message.isBot ? "text-gray-400" : "text-white/70"
+                    }`}
+                  >
+                    {format(message.timestamp, "h:mm a")}
                   </p>
                 </div>
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-gray-800 p-3 rounded-2xl border border-gray-700">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
-                    <span className="text-sm text-gray-300">MAIRA is thinking...</span>
+                    <span className="text-sm text-gray-300">
+                      MAIRA is thinking...
+                    </span>
                   </div>
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
