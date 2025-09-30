@@ -1,10 +1,11 @@
 // Central place to map logical page names to route paths.
 const pageRouteMap = {
   Dashboard: "/dashboard",
+  Voice: "/voice",
   Calendar: "/calendar",
   Clients: "/clients",
   Summaries: "/summaries",
-  Billing: "/billing"
+  Billing: "/billing",
 };
 
 export function createPageUrl(pageName) {
