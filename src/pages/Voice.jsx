@@ -3,6 +3,7 @@ import { Activity as ActivityEntity, Client } from "@/entities/all.js";
 import { format, startOfDay, endOfDay } from "date-fns";
 import { Activity } from "lucide-react";
 import ActivityCard from "../components/dashboard/ActivityCard.jsx";
+import ToolExecutionPanel from "../components/ToolExecutionPanel.jsx";
 
 export default function Voice() {
   const [activities, setActivities] = useState([]);
@@ -137,6 +138,11 @@ export default function Voice() {
           >
             {/* Widget will be dynamically inserted here */}
           </div>
+        </div>
+
+        {/* Tool Execution Panel */}
+        <div className="mb-8">
+          <ToolExecutionPanel />
         </div>
 
         {/* Recent Activity */}
